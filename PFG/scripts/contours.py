@@ -9,6 +9,7 @@
 import cv2
 import numpy as np
 import json
+import matplotlib.pyplot as plt
 
 # Función que recorta una imagen según una región de interés
 def recortar_imagen(imagen, bbox):
@@ -45,24 +46,24 @@ def procesar_imagenes(image_l, image_r, input_masks, mostrar=True):
         mask_r = recortar_imagen(image_r, bbox_r)
         #Mostrar imagenes
         if mostrar:
-            cv2.imshow('Recorte izquierdo', mask_l)
-            cv2.imshow('Recorte derecho', mask_r)
-            cv2.waitKey(0)
-        #Ampliacion de contraste
+            plt.imshow(mask_l, cmap='gray')
+            plt.title('Recorte izquierdo')
+            plt.axis('off')
+            plt.show()
+
+            plt.imshow(mask_r, cmap='gray')
+            plt.title('Recorte derecho')
+            plt.axis('off')
+            plt.show()
         # Encontrar bordes de las mascaras mediante umbralizaion dinamica en funcion del brilllo medio de la imagen
         #Aplicar umbralizacion
         mean_l = np.mean(mask_l)
         mean_r = np.mean(mask_r)
-        if(mean_l < 100 and mean_r < 100):
-            #Aplicar umbralizacion por Otsu
-            _, mask_l = cv2.threshold(mask_l, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            _, mask_r = cv2.threshold(mask_r, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        else:
-            #Aplicar umbralizacion por media
-            _, mask_l = cv2.threshold(mask_l, mean_l, 255, cv2.THRESH_BINARY)
-            _, mask_r = cv2.threshold(mask_r, mean_r, 255, cv2.THRESH_BINARY)
-
         
+        #Aplicar umbralizacion por Otsu
+        _, mask_l = cv2.threshold(mask_l, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, mask_r = cv2.threshold(mask_r, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
         #hallar coordenadas de los bordes de canny
         #coords_l = np.column_stack(np.where(mask_l > 0))
         #coords_r = np.column_stack(np.where(mask_r > 0))
@@ -71,9 +72,15 @@ def procesar_imagenes(image_l, image_r, input_masks, mostrar=True):
 
         #Mostar las imágenes con los bordes
         if mostrar:
-            cv2.imshow('Bordes de la imagen izquierda', mask_l)
-            cv2.imshow('Bordes de la imagen derecha', mask_r)
-            cv2.waitKey(0)
+            plt.imshow(mask_l, cmap='gray')
+            plt.title('Recorte izquierdo')
+            plt.axis('off')
+            plt.show()
+
+            plt.imshow(mask_r, cmap='gray')
+            plt.title('Recorte derecho')
+            plt.axis('off')
+            plt.show()
 
         # Encontrar contornos en las máscaras
         contours_l,_ = cv2.findContours(mask_l, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -118,7 +125,7 @@ input_masks = []
 with open(ruta_masks, 'r') as archivo:
     input_masks = json.load(archivo)
 
-output_masks = procesar_imagenes(image_l, image_r, input_masks, mostrar = False)
+output_masks = procesar_imagenes(image_l, image_r, input_masks, mostrar = True)
 
 with open(ruta_output_masks, 'w') as archivo_json:
     json.dump(output_masks, archivo_json, default=convertir_a_json, indent=4)
