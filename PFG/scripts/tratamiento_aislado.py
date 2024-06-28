@@ -107,24 +107,20 @@ def filtrar_contornos(image_gray, mostrar):
     #Mostar histograma
     #plt.hist(image_gray.ravel(), 256, [0, 256])
     #plt.show()
-    mean = np.mean(image_gray)
-    if(mean < 100):
-        #Recortar imagen
-        image_gray = recortar_imagen(image_gray, ensanchar_bbox([0, 0, image_gray.shape[1], image_gray.shape[0]], -0.08))
-        #umbralizacion dinamica con otsu
-        umbral, image_thresh = cv2.threshold(image_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        #cv2.imshow('Imagen umbralizada', image_thresh)
-        #cv2.waitKey(0)
-        #mostrar histograma original con umbral señalado en rojo
-        #plt.hist(image_gray.ravel(), 256, [0, 256])
-        #plt.axvline(x=umbral, color='r', linestyle='dashed', linewidth=1)
-        #plt.show()
-        contours, _ = cv2.findContours(image_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-    else:
-        _, image_thresh = cv2.threshold(image_gray, mean, 255, cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(image_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+
+    #Recortar imagen
+    image_gray = recortar_imagen(image_gray, ensanchar_bbox([0, 0, image_gray.shape[1], image_gray.shape[0]], -0.08))
+    #umbralizacion dinamica con otsu
+    umbral, image_thresh = cv2.threshold(image_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    #cv2.imshow('Imagen umbralizada', image_thresh)
+    #cv2.waitKey(0)
+    #mostrar histograma original con umbral señalado en rojo
+    #plt.hist(image_gray.ravel(), 256, [0, 256])
+    #plt.axvline(x=umbral, color='r', linestyle='dashed', linewidth=1)
+    #plt.show()
+    contours, _ = cv2.findContours(image_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     image_thresh = cv2.cvtColor(image_thresh, cv2.COLOR_GRAY2BGR)
     image_thresh = cv2.cvtColor(image_thresh, cv2.COLOR_BGR2RGB)

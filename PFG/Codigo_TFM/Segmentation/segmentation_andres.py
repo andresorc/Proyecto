@@ -148,16 +148,16 @@ def convertir_a_json(objeto):
     
 
 # Paths and constants
-files_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Pruebas\Corrected'
-output_file_path = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Pruebas\head_tail_pts.json'
+files_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\Corrected'
+output_file_path = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\head_tail_pts.json'
 head_tail_pts = {}
 
 # Load contours from JSON file
-with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\masks\masks_contours.json', 'r') as archivo:
+with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\masks\masks_contours.json', 'r') as archivo:
     masks_contours = json.load(archivo)
 
 #Leer sufijo
-with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Pruebas\sufijo.txt', 'r') as f:
+with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\sufijo.txt', 'r') as f:
     sufijo = f.read().strip()
 
 # Process each image and find head-tail points

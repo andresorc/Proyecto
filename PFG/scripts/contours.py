@@ -125,7 +125,7 @@ input_masks = []
 with open(ruta_masks, 'r') as archivo:
     input_masks = json.load(archivo)
 
-output_masks = procesar_imagenes(image_l, image_r, input_masks, mostrar = True)
+output_masks = procesar_imagenes(image_l, image_r, input_masks, mostrar = False)
 
 with open(ruta_output_masks, 'w') as archivo_json:
     json.dump(output_masks, archivo_json, default=convertir_a_json, indent=4)

@@ -4,11 +4,11 @@ import math
 import cv2
 import numpy as np
 
-json_pts_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Pruebas\head_tail_pts.json"
+json_pts_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\head_tail_pts.json"
 json_params_dir = 'Codigo_TFM/Calibration/Stereo/params.json'
 depth_csv_dir = 'Codigo_TFM/Depth_estimation/depth.csv'
-imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Pruebas\Corrected"
-save_imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Results"
+imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\Corrected"
+save_imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Results"
 lengths = []
 draw_length = 1
 slope_threshold = 100  # Define tu umbral aquí
