@@ -81,11 +81,6 @@ def calcular_angulo(punto1, punto2):
 def calcular_distancia(punto1, punto2):
     return np.sqrt((punto1[0] - punto2[0]) ** 2 + (punto1[1] - punto2[1]) ** 2)
 
-def apply_clahe(img):
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    cl1 = clahe.apply(img)
-    return cl1
-
 # Función para calcular la pendiente entre dos puntos
 def calcular_pendiente(punto1, punto2):
     x1, y1 = punto1
@@ -233,18 +228,13 @@ for bbox1 in bounding_boxes:
     if(y > 1350 ):
         continue
     mascara = generar_mascara(imagen_frame1_gray, bbox1)
-    #si el brillo promedio es menor que 100 o mayor que 150, se aplica clahe
-    if np.mean(mascara) < 100 or np.mean(mascara) > 150:
-       mascara = apply_clahe(mascara)
-    
+    mascara_original = mascara
 
     xmin, ymin, xmax, ymax = definir_region_de_busqueda(bbox1, img_shape=imagen_frame2_gray.shape)
     region = imagen_frame2_gray[ymin:ymax, xmin:xmax]
     #mostrar mascara
     #plt.imshow(mascara, cmap='gray')
     #plt.show()
-    if np.mean(mascara) < 100 or np.mean(mascara) > 150:
-       region = apply_clahe(region)
     #mostrar region
     #plt.imshow(region, cmap='gray')
     #plt.show()
@@ -264,6 +254,9 @@ for bbox1 in bounding_boxes:
 
 # Dibujar las líneas de correspondencia y calcular la diferencia promedio en píxeles y la pendiente promedio
 diferencia_promedio, pendiente_promedio, correlacion_promedio, correspondencias = dibujar_lineas_correspondencia_filtradas(imagen_frame1_rgb, imagen_frame2_rgb, correspondencias)
+#sacar numero de corresondencias filtradas 
+num_correspondencias = len(correspondencias)
+print("Número de correspondencias filtradas:", num_correspondencias)
 #Se calcula la diferencia promedio y la pendiente promedio otra vez, pero solo sobre las correspondencias filtradas
 #para evitar que se tomen en cuenta las correspondencias que no se han filtrado
 diferencia_promedio = np.mean([calcular_distancia(corr[0], corr[1]) for corr in correspondencias]) if correspondencias else None
@@ -324,3 +317,4 @@ with open('masks/masks_filt_corr_r.json', 'w') as archivo:
 datos = {'diferencia_promedio': diferencia_promedio, 'pendiente_promedio': pendiente_promedio}
 with open('masks/datos_correspondencias.json', 'w') as archivo:
     json.dump(datos, archivo, default = convertir_a_json, indent=4)
+
