@@ -4,6 +4,26 @@ import math
 import cv2
 import numpy as np
 
+def add_text_box(image, text, pos):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.8
+    font_thickness = 2
+    line_type = cv2.LINE_AA
+
+    # Obtener el tamaño del texto
+    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+
+    # Coordenadas del cuadro de texto
+    text_origin = (pos[0] - text_size[0], pos[1])
+    text_bottom_left = (text_origin[0], text_origin[1] + text_size[1] + 10)
+
+    # Crear un fondo negro para el texto
+    cv2.rectangle(image, text_origin, (image.shape[1],image.shape[0]), (0, 0, 0), cv2.FILLED)
+
+    # Escribir el texto en rojo
+    cv2.putText(image, text, (text_origin[0] + 5, text_origin[1] + text_size[1] + 5),
+                font, font_scale, (0, 0, 255), font_thickness, line_type)
+
 json_pts_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\head_tail_pts.json"
 json_params_dir = 'Codigo_TFM/Calibration/Stereo/params.json'
 depth_csv_dir = 'Codigo_TFM/Depth_estimation/depth.csv'
@@ -11,15 +31,8 @@ imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Imag
 save_imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Results"
 lengths = []
 draw_length = 1
-slope_threshold = 100  # Define tu umbral aquí
-distance_threshold = 50  # Define tu umbral aquí
-length_threshold_cm = 100  # Longitud máxima en cm
+length_threshold_cm = 6  # Longitud máxima en cm
 
-def calculate_slope(point1, point2):
-    return (point2[1] - point1[1]) / (point1[0] - point2[0] + 1e-10)
-
-def calculate_distance(point1, point2):
-    return math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
 
 with open(json_pts_dir) as json_pts_file:
     pts_dict = json.load(json_pts_file)
@@ -96,10 +109,22 @@ with open(depth_csv_dir, 'w', newline='') as depth_csv:
                                 img_r = cv2.line(img_r, (item[2][0], item[2][1]), (item[4][0], item[4][1]), (0, 255, 0), 2)
                                 img_l = cv2.line(img_l, (item[3][0], item[3][1]), (item[5][0], item[5][1]), (0, 255, 0), 2)
 
-                        cv2.imwrite(f"{save_imgs_dir}/{r_img_name}", img_r)
-                        cv2.imwrite(f"{save_imgs_dir}/{l_img_name}", img_l)
-                
+                        
+                        
                 obj_counter += 1  # Incrementar contador de objetos
-
+            #obtener promedio de las longitudes
+            promedio = sum([item[6] for item in lengths]) / len(lengths)
+            add_text_box(img_r, f"Numero de objetos detectados: {obj_counter - 1}", (img_r.shape[1] - 200,img_r.shape[0]-200))
+            pos = (img_r.shape[1] - 275, img_r.shape[0] - 150)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.8
+            font_thickness = 2
+            line_type = cv2.LINE_AA
+            text = f"Longitud promedio: {'{:.2f}'.format(promedio * 100)} cm"
+            text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+            text_origin = (pos[0] - text_size[0], pos[1])
+            img_r = cv2.putText(img_r, text, (text_origin[0] + 5, text_origin[1] + text_size[1] + 5),font, font_scale, (0, 255, 255), font_thickness, line_type)
+            cv2.imwrite(f"{save_imgs_dir}/{r_img_name}", img_r)
+            cv2.imwrite(f"{save_imgs_dir}/{l_img_name}", img_l)
             lengths = []
 
