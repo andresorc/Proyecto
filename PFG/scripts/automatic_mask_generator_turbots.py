@@ -81,7 +81,7 @@ image = cv2.imread(image_path)
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 # Instalar y clonar los repositorios necesarios (esto es solo para colab, no se ejecutará en un script)
-# os.system('git clone https://github.com/ChaoningZhang/MobileSAM')
+# pip install timm
 
 # Importar los módulos necesarios del repositorio clonado
 sys.path.append("..")
