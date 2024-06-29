@@ -114,6 +114,8 @@ with open(depth_csv_dir, 'w', newline='') as depth_csv:
                 obj_counter += 1  # Incrementar contador de objetos
             #obtener promedio de las longitudes
             promedio = sum([item[6] for item in lengths]) / len(lengths)
+
+            # Dibujar texto en la imagen
             add_text_box(img_r, f"Numero de objetos detectados: {obj_counter - 1}", (img_r.shape[1] - 200,img_r.shape[0]-200))
             pos = (img_r.shape[1] - 275, img_r.shape[0] - 150)
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -124,6 +126,10 @@ with open(depth_csv_dir, 'w', newline='') as depth_csv:
             text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
             text_origin = (pos[0] - text_size[0], pos[1])
             img_r = cv2.putText(img_r, text, (text_origin[0] + 5, text_origin[1] + text_size[1] + 5),font, font_scale, (0, 255, 255), font_thickness, line_type)
+
+            add_text_box(img_l, f"Numero de objetos detectados: {obj_counter - 1}", (img_l.shape[1] - 200,img_l.shape[0]-200))
+            img_l = cv2.putText(img_l, text, (text_origin[0] + 5, text_origin[1] + text_size[1] + 5),font, font_scale, (0, 255, 255), font_thickness, line_type)
+
             cv2.imwrite(f"{save_imgs_dir}/{r_img_name}", img_r)
             cv2.imwrite(f"{save_imgs_dir}/{l_img_name}", img_l)
             lengths = []

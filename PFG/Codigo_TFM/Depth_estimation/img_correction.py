@@ -2,12 +2,14 @@ import cv2
 import numpy as np
 import os
 import json
+import csv
 
 dir_mx_d = 'Calibration/Cam_sup_d'
 dir_mx_i = 'Calibration/Cam_sup_i'
 dir_stereo = 'Calibration/Stereo'
 #imgs_dir = 'Depth_estimation/Images'
-imgs_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\PFG\Images\Pruebas\Pruebas_varias'
+imgs_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas'
+imgs_dir_corrected = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\corrected'
 dir_json = 'Calibration/Stereo/params.json'
 
 mtx_cam_r = np.loadtxt(os.path.join(dir_mx_d, 'mtx_cam_sup_d.csv'), delimiter=',')
@@ -19,7 +21,28 @@ dist_cam_l = np.loadtxt(os.path.join(dir_mx_i, 'dist_cam_sup_i.csv'), delimiter=
 R = np.loadtxt(os.path.join(dir_stereo, 'R_stereo.csv'), delimiter=',')
 T =  np.loadtxt(os.path.join(dir_stereo, 'T_stereo.csv'), delimiter=',')
 
+#Recorrer imgs_dir_corrected para determinar el sufijo de la imagen que se va a procesar en función de la imagen con el número de sufijo más alto
+#Las imágenes tienen el siguiente formato: cam_sup_l_corrected_sufijo.jpg, cam_sup_r_corrected_sufijo.jpg
+#El sufijo es un número entero que se incrementa en 1 para cada imagen
+#Se obtiene el sufijo de la imagen con el número más alto y se incrementa en 1 para obtener el sufijo de la siguiente imagen
+
+sufijo = 0
 remove = []
+imgs_name = os.listdir(imgs_dir_corrected)
+for img_name in imgs_name:
+    if not img_name.endswith('.jpg'):
+        remove.append(img_name)
+
+for item in remove:
+    imgs_name.remove(item)
+
+for img_name in imgs_name:
+    if 'cam_sup_l_corrected_' in img_name:
+        sufijo = max(sufijo, int(img_name.split('_')[-1].split('.')[0]))
+
+sufijo += 1
+
+
 imgs_name = os.listdir(imgs_dir)
 for img_name in imgs_name:
     if not img_name.endswith('.jpg'):
@@ -51,8 +74,8 @@ for (img_l_name,img_r_name) in zip(cam_sup_i_images_names,cam_sup_d_images_names
     rect_img_l = cv2.remap(img_l, map1_l, map2_l, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
     rect_img_r = cv2.remap(img_r, map1_r, map2_r, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
-    cv2.imwrite(f'{imgs_dir}/Corrected/{img_l_name.rpartition(".")[0]}_corrected.jpg', rect_img_l)
-    cv2.imwrite(f'{imgs_dir}/Corrected/{img_r_name.rpartition(".")[0]}_corrected.jpg', rect_img_r)
+    cv2.imwrite(f'{imgs_dir}/Corrected/{img_l_name.rpartition(".")[0]}_corrected_{sufijo}.jpg', rect_img_l)
+    cv2.imwrite(f'{imgs_dir}/Corrected/{img_r_name.rpartition(".")[0]}_corrected_{sufijo}.jpg', rect_img_r)
 
 print(Q)
 

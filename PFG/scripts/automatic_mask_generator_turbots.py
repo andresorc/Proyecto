@@ -33,60 +33,54 @@ def show_anns(anns):
         img[m] = color_mask
     ax.imshow(img)
 
+import numpy as np
+
 def remove_overlapped_masks(masks, threshold):
     masks_to_keep = masks.copy()
     indices_to_remove = set()
-    mask_sums = [np.sum(mask['segmentation']) for mask in masks_to_keep]
+    mask_areas = [np.sum(mask['segmentation']) for mask in masks_to_keep]
 
+    num_masks = len(masks_to_keep)
+    
     # Iterar sobre cada par de máscaras
-    for i, mask_i in enumerate(masks_to_keep):
-        for j, mask_j in enumerate(masks_to_keep[i+1:], start=i+1):
+    for i in range(num_masks):
+        for j in range(i + 1, num_masks):
+            mask_i = masks_to_keep[i]
+            mask_j = masks_to_keep[j]
+
             # Verificar si las máscaras se superponen
             overlap = mask_i['segmentation'] & mask_j['segmentation']
 
             if np.any(overlap):
                 # Calcular el porcentaje de superposición
-                overlap_percentage = np.sum(overlap) / mask_sums[i]
+                overlap_percentage_i = np.sum(overlap) / mask_areas[i]
+                overlap_percentage_j = np.sum(overlap) / mask_areas[j]
 
-                # Si el porcentaje de superposición es mayor que el umbral, marcar para eliminación
-                if overlap_percentage > threshold:
-                    if mask_sums[i] > mask_sums[j]:
+                # Si el porcentaje de superposición es mayor que el umbral, decidir cuál máscara mantener
+                if overlap_percentage_i > threshold or overlap_percentage_j > threshold:
+                    if mask_areas[i] < mask_areas[j]:
+                        indices_to_remove.add(j)
+                    else:
                         indices_to_remove.add(i)
-                        
+    
     # Construir lista de máscaras a mantener
     masks_to_keep = [mask for idx, mask in enumerate(masks_to_keep) if idx not in indices_to_remove]
 
     return masks_to_keep
 
 
+
+# Se leen las máscaras de la lista
+
+#Se pide el sufijo de la imagen 
+sufijo = input('Introduce el sufijo de la imagen: ')
+
 # Cargar la imagen de ejemplo
-image_path = 'Images/Pruebas/cam_sup_l_corrected.jpg'
-image_l = cv2.imread(image_path)
-image_l = cv2.cvtColor(image_l, cv2.COLOR_BGR2RGB)
-alto_imagen_l = image_l.shape[0]
-ancho_imagen_l = image_l.shape[1]
+image_path = f'Images/Pruebas/cam_sup_l_corrected_{sufijo}.jpg'
+image = cv2.imread(image_path)
+image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-image_path = 'Images/Pruebas/cam_sup_r_corrected.jpg'
-image_r = cv2.imread(image_path)
-image_r = cv2.cvtColor(image_r, cv2.COLOR_BGR2RGB)
-alto_imagen_r = image_r.shape[0]
-ancho_imagen_r = image_r.shape[1]
-
-#preprocesar imágenes
-#convertimos a escala de grises
-gray_l = cv2.cvtColor(image_l, cv2.COLOR_BGR2GRAY)
-gray_r = cv2.cvtColor(image_r, cv2.COLOR_BGR2GRAY)
-
-#reducimos brillo de la imagen
-gray_l = cv2.convertScaleAbs(gray_l, alpha=0.5, beta=0)
-gray_r = cv2.convertScaleAbs(gray_r, alpha=0.5, beta=0)
-
-#ecualizamos el histograma
-gray_l = cv2.equalizeHist(gray_l)
-gray_r = cv2.equalizeHist(gray_r)
-
-# Instalar y clonar los repositorios necesarios (esto es solo un ejemplo, no se ejecutará en un script)
-# os.system('pip install timm')
+# Instalar y clonar los repositorios necesarios (esto es solo para colab, no se ejecutará en un script)
 # os.system('git clone https://github.com/ChaoningZhang/MobileSAM')
 
 # Importar los módulos necesarios del repositorio clonado
@@ -104,86 +98,44 @@ sam.eval()
 # Opciones avanzadas de generación de máscaras
 mask_generator = SamAutomaticMaskGenerator(
     model=sam,
-    points_per_side=48,
+    points_per_side=64,
     pred_iou_thresh=0.9,
     stability_score_thresh=0.92,
-    crop_n_layers=1,
+    crop_n_layers=2,
     crop_n_points_downscale_factor=2,
     min_mask_region_area=15
 )
 
 
-masks_l = []
-masks_r = []
-masks_l_keep = []
-masks_r_keep = []
-masks_l = mask_generator.generate(image_l)
-masks_r = mask_generator.generate(image_r)
+masks = mask_generator.generate(image)
+masks_to_keep = []
 
-for mask in masks_l: # Añadir el número de cuadrante a cada máscara
-    width = mask['bbox'][2]
-    height = mask['bbox'][3]
+for mask in masks: # Añadir el número de cuadrante a cada máscara
     area = mask['area']
-    r1 = width/height
-    r2 = height/width
-    if  r1 <= 1.2 and r2 <=1.2: #Se filtran las mascaras por la relacion de aspecto de la bounding box
-        if area <= 3500: #Se filtran por altura
-            masks_l_keep.append(mask)
-
-for mask in masks_r: 
-    width = mask['bbox'][2]
-    height = mask['bbox'][3]
-    area = mask['area']
-    r1 = width/height
-    r2 = height/width
-    if  r1 <= 1.2 and r2 <=1.2: #Se filtran las mascaras por la relacion de aspecto de la bounding box
-        if area <= 3500: #Se filtran por altura
-            masks_r_keep.append(mask)
-    
-
-masks_l_to_keep = remove_overlapped_masks(masks_l_keep, 0.3)
-masks_r_to_keep = remove_overlapped_masks(masks_r_keep, 0.3)
+    if area <= 4800: #Se filtran por altura
+        masks_to_keep.append(mask)
 
 
-# Mostrar las máscaras sobre la imagen
-fig, ax = plt.subplots(figsize=(ancho_imagen_l / 100, alto_imagen_l / 100), dpi=100)
-ax.imshow(image_l)
-show_anns(masks_l_to_keep)
-ax.axis('off')
-plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-plt.savefig('Images/image_with_masks_left.jpg', dpi=100, bbox_inches='tight', pad_inches=0)
-plt.close(fig)
 
-fig, ax = plt.subplots(figsize=(ancho_imagen_r / 100, alto_imagen_r / 100), dpi=100)
-ax.imshow(image_r)
-show_anns(masks_r_to_keep)
-ax.axis('off')
-plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-plt.savefig('Images/image_with_masks_right.jpg', dpi=100, bbox_inches='tight', pad_inches=0)
-plt.close(fig)
+masks_to_keep = remove_overlapped_masks(masks_to_keep, 0.2)
+
+plt.figure(figsize=(20,20))
+plt.imshow(image)
+show_anns(masks)
+plt.axis('off')
+plt.show()
 
 # Lista de bounding boxes y áreas para las máscaras del lado izquierdo
-mask_list_l = []
-for mask in masks_l_to_keep:
-    mask_list_l.append({
+mask_list = []
+for mask in masks_to_keep:
+    mask_list.append({
         'bbox': mask['bbox'],
-        'area': mask['area'],
-    })
-
-# Lista de bounding boxes y áreas para las máscaras del lado derecho
-mask_list_r = []
-for mask in masks_r_to_keep:
-    mask_list_r.append({
-        'bbox': mask['bbox'],
-        'area': mask['area'],
     })
 
 #Guardar los datos de las máscaras en un .json
-with open('masks/masks_l.json', 'w') as archivo_json:
-    json.dump(mask_list_l, archivo_json, default=convertir_a_json, indent=4)
+with open(f'masks/masks_{sufijo}.json', 'w') as archivo_json:
+    json.dump(mask_list, archivo_json, default=convertir_a_json, indent=4)
 
-with open('masks/masks_r.json', 'w') as archivo_json:
-    json.dump(mask_list_r, archivo_json, default=convertir_a_json, indent=4)
 
 
 
