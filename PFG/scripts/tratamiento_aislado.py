@@ -111,6 +111,8 @@ def filtrar_contornos(image_gray, mostrar):
 
     #Recortar imagen
     image_gray = recortar_imagen(image_gray, ensanchar_bbox([0, 0, image_gray.shape[1], image_gray.shape[0]], -0.08))
+    if(image_gray.mean() > 200):
+        return False
     #umbralizacion dinamica con otsu
     umbral, image_thresh = cv2.threshold(image_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
