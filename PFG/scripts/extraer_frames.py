@@ -14,20 +14,21 @@ def extract_frame(video_path, frame_number):
     return frame
 
 # Se cargan los videos
-video_path = '../../Videos/SupI-20230629182035-20230629182536.mp4'
-video_path2 = '../../Videos/SupD-20230629182038-20230629182538.mp4'
+video_path = '../../Videos/SupI-20230629181535-20230629182035.mp4'
+video_path2 = '../../Videos/SupD-20230629181537-20230629182038.mp4'
 
 # Se extrae un frame específico de cada video
-frame_l = extract_frame(video_path, 720)  # Ejemplo de extraer el frame número 1200
-frame_r = extract_frame(video_path2, 603)  # Ejemplo de extraer el frame número 2100
+frame_l = extract_frame(video_path, 1095)  # Ejemplo de extraer el frame número 1200
+frame_r = extract_frame(video_path2, 1038)  # Ejemplo de extraer el frame número 2100
+
+# Se reconvierte a RGB para la visualización
+#frame_show = cv2.cvtColor(frame_l, cv2.COLOR_BGR2RGB)
+#frame2_show = cv2.cvtColor(frame_r, cv2.COLOR_BGR2RGB)
 
 # Se ajusta el tamaño para la visualización
 frame_show = cv2.resize(frame_l, (640, 480))
 frame2_show = cv2.resize(frame_r, (640, 480))
 
-# Se reconvierte a BGR para la visualización
-frame_show = cv2.cvtColor(frame_show, cv2.COLOR_BGR2RGB)
-frame2_show = cv2.cvtColor(frame2_show, cv2.COLOR_BGR2RGB)
 
 # Se muestran los frames
 cv2.imshow('Frame', frame_show)
