@@ -25,7 +25,6 @@ def add_text_box(image, text, pos):
     # Escribir el texto en rojo
     cv2.putText(image, text, (text_origin[0] + 5, text_origin[1] + text_size[1] + 5),
                 font, font_scale, (0, 0, 255), font_thickness, line_type)
-
 def calculate_slope(point1, point2):
     return (point2[1] - point1[1]) / (point1[0] - point2[0] + 1e-10)
 
@@ -167,11 +166,18 @@ with open(depth_csv_dir, 'w', newline='') as depth_csv:
             lengths = []
 
 # Generar y mostrar el histograma de frecuencias relativas
-plt.hist(lengths_cm, bins=np.arange(length_threshold_min_cm, length_threshold_max_cm + 0.5, 0.5), edgecolor='black', density=True)
+bin_edges = np.arange(length_threshold_min_cm+0.25, length_threshold_max_cm-0.25, 0.5)
+hist, bins = np.histogram(lengths_cm, bins=bin_edges, density=False)
+hist_rel = hist / hist.sum()  # Convertir a frecuencias relativas
+
+plt.bar(bins[:-1], hist_rel, width=0.5, edgecolor='black')
 plt.xlabel('Tamaño (cm)')
-plt.ylabel('Frecuencia Relativa')
+plt.ylabel('Frecuencia relativa de aparicion')
 plt.title('Histograma de frecuencias relativas de tamaños de rodaballos')
 plt.show()
+
+# Verificación de que las frecuencias relativas suman 1
+print(f"Suma de frecuencias relativas: {hist_rel.sum()}")
 
 
 
