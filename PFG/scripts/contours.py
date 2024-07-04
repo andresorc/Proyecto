@@ -85,6 +85,7 @@ def procesar_imagenes(image_l, image_r, input_masks, mostrar=True):
         # Encontrar contornos en las máscaras
         contours_l,_ = cv2.findContours(mask_l, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         contours_r,_ = cv2.findContours(mask_r, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
         #Encontrar el contorno con el área más grande
         best_cnt_l = max(contours_l, key=cv2.contourArea)
         best_cnt_r = max(contours_r, key=cv2.contourArea)
