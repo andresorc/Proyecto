@@ -110,7 +110,7 @@ def dibujar_lineas_correspondencia_filtradas(imagen1, imagen2, correspondencias)
     plt.show()
 
     angulo_promedio = Counter(angulos).most_common(1)[0][0]
-    margen_angulo = 20
+    margen_angulo = 10
     angulos_filtrados = [(corr, ang) for corr, ang in zip(correspondencias, angulos) if abs(ang - angulo_promedio) < margen_angulo]
 
     umbral_correlacion = 0.95

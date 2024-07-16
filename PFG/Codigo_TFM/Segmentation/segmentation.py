@@ -1,64 +1,98 @@
-import cv2
-import os
-import math
 import numpy as np
+import cv2
 import json
+import os
+from scipy.spatial import procrustes
+from scipy.spatial.distance import cdist
+import math
 
-def get_extent(cnt, area):
-
-    _,_,w,h = cv2.boundingRect(cnt)
-    extent = float(area)/(w*h)
-
-    return extent
-
-def get_eccentricity(cnt):
-
-    _,(ma,MA),_ = cv2.fitEllipse(cnt)
-    eccentricity = np.sqrt(1-(ma/MA)**2)
-
-    return eccentricity
-
-def get_solidity(cnt, area):
-
-    hull = cv2.convexHull(cnt)
-    hull_area = cv2.contourArea(hull)
-    solidity = float(area)/hull_area
-
-    return solidity
-
-def get_intensity(cnt, bin_img, img):
-
-    mask = np.zeros(bin_img.shape, np.uint8)
-    cv2.drawContours(mask,[cnt],0,255,-1)
-    mean = cv2.mean(img ,mask = mask)
-    
-    return mean
-
-def get_centroid(cnt):
-
-    M = cv2.moments(cnt)
-    cx = 0
-    cy = 0
-    if M['m00'] != 0:
-        cx = int(M['m10']/M['m00'])
-        cy = int(M['m01']/M['m00'])
-    
-    return [cx,cy]
-
-def get_extreme_points(cnt):
-
-    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
-    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
-    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
-
-    return [topmost, bottommost, leftmost, rightmost]
+def cargar_contorno_desde_json(json_data):
+    contorno = np.array(json_data['cnt']).reshape(-1, 2)
+    return contorno
 
 def dist(p1, p2):
      
     x0 = p1[0] - p2[0]
     y0 = p1[1] - p2[1]
     return x0 * x0 + y0 * y0
+
+import numpy as np
+
+def find_closest_points(contour, point1, point2):
+    def euclidean_distance(p1, p2):
+        return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+    
+    closest_point1 = None
+    closest_distance1 = float('inf')
+    
+    closest_point2 = None
+    closest_distance2 = float('inf')
+    
+    for point in contour:
+        point = tuple(point[0])  # Asegurarse de que el punto esté en la forma correcta
+        
+        dist1 = euclidean_distance(point1, point)
+        dist2 = euclidean_distance(point2, point)
+        
+        if dist1 < closest_distance1:
+            closest_distance1 = dist1
+            closest_point1 = point
+        
+        if dist2 < closest_distance2:
+            closest_distance2 = dist2
+            closest_point2 = point
+    
+    return closest_point1, closest_point2, closest_distance1, closest_distance2
+
+
+
+def recortar_imagen(imagen, bbox):
+    x, y, w, h = bbox
+    return imagen[y:y+h, x:x+w]
+
+
+def get_ext_dist_points(contour):
+    # Asegurarse de que el contorno es un arreglo de NumPy
+    if not isinstance(contour, np.ndarray):
+        contour = np.array(contour)
+    
+    # Calcular los puntos extremos del contorno
+    leftmost = tuple(contour[contour[:, :, 0].argmin()][0])
+    rightmost = tuple(contour[contour[:, :, 0].argmax()][0])
+    topmost = tuple(contour[contour[:, :, 1].argmin()][0])
+    bottommost = tuple(contour[contour[:, :, 1].argmax()][0])
+
+    vertical_distance = bottommost[1] - topmost[1]  
+    horizontal_distance = bottommost[0] - topmost[0]
+   
+    distance_bottop = math.sqrt(vertical_distance**2 + horizontal_distance**2)
+
+    vertical_distance = rightmost[1] - leftmost[1]
+    horizontal_distance = rightmost[0] - leftmost[0]
+
+    distance_rightleft = math.sqrt(vertical_distance**2 + horizontal_distance**2)
+
+    if distance_bottop > distance_rightleft:
+        distance = distance_bottop
+        axis = 'vertical'
+    else:
+        distance = distance_rightleft  
+        axis = 'horizontal'  
+    return distance, axis
+
+def get_ext_points(contour,axis):
+        # Asegurarse de que el contorno es un arreglo de NumPy
+    if not isinstance(contour, np.ndarray):
+        contour = np.array(contour)
+    leftmost = tuple(contour[contour[:, :, 0].argmin()][0])
+    rightmost = tuple(contour[contour[:, :, 0].argmax()][0])
+    topmost = tuple(contour[contour[:, :, 1].argmin()][0])
+    bottommost = tuple(contour[contour[:, :, 1].argmax()][0])
+    if axis == 'vertical':
+        ext_pts = [topmost, bottommost]
+    else:
+        ext_pts = [leftmost, rightmost]  
+    return ext_pts
 
 
 def maxDist(points):
@@ -83,175 +117,112 @@ def maxDist(points):
         max_len_pts[1] = aux
     return max_len_pts
 
-
-imgs_dir = "Depth_estimation/Images/Undistorted/Corrected/"
-files_dir = 'Segmentation/'
-name_fich_carac_morf_text = "caracteristicas_morfologicas"
-path_ref_img_r = "cam_sup_r_fig_ref_corrected.jpg"
-path_ref_img_l = "cam_sup_l_fig_ref_corrected.jpg"
-brown = [30, 21, 30]
-
-draw = 0
-guardar_carac_morfologicas = 1
-n_real = 0
-head_tail_pts = {}
-dict_aux = {}
-
-ref_img_r = cv2.imread(os.path.join(imgs_dir,path_ref_img_r))
-ref_img_l = cv2.imread(os.path.join(imgs_dir,path_ref_img_l))
-
-for path_img in os.listdir(imgs_dir):
-
-    #or 'cam_sup_l_fig_21' in path_img or 'cam_sup_l_fig_22' in path_img
-    if path_img.endswith('.jpg') and ('cam_sup_l' in path_img or 'cam_sup_r' in path_img) and path_img != path_ref_img_r and path_img != path_ref_img_l:
-    #if path_img.endswith('.jpg') and ('cam_sup_r_fig_14' in path_img ) and path_img != path_ref_img_r and path_img != path_ref_img_l and path_img != path_ref_img_lat:
-        if 'cam_sup_r' in path_img:
-
-            ref_img = ref_img_r
-
-        else:
-            
-            ref_img = ref_img_l
-
-        fich_carac_morf_abierto = True
-
-        #Intento abrir el fichero donde quiero intentar guardar las características morfológicas de los objetos segmentados
-        try:
-            file_morf = open(f"{files_dir}{name_fich_carac_morf_text}_{path_img.split('.', 1)[0]}.txt", "w")
-        except IOError:
-            print(f"El fichero {name_fich_carac_morf_text}_{path_img.split('.', 1)[0]}.txt no se ha podido abrir")
-            fich_carac_morf_abierto = False
-        
-        img = cv2.imread(os.path.join(imgs_dir,path_img))
-
-        no_back_img = cv2.subtract(img, ref_img)
-
-        no_brown_img = no_back_img.copy()
-        no_brown_img[:,:,0] = cv2.subtract(no_brown_img[:,:,0], brown[0])
-        no_brown_img[:,:,1] = cv2.subtract(no_brown_img[:,:,1], brown[1])
-        no_brown_img[:,:,2] = cv2.subtract(no_brown_img[:,:,2], brown[2])
-
-        enh_img = cv2.addWeighted(no_brown_img, 3, np.zeros(no_brown_img.shape, no_brown_img.dtype), 0,  80)
-
-        if (draw):
-            cv2.imshow("Imagen original", img)
-            cv2.waitKey(500)
-
-            cv2.imshow("Imagen sin fondo", no_back_img)
-            cv2.waitKey(500)
-
-            cv2.imshow("Imagen con contraste", no_brown_img)
-            cv2.waitKey(500)
-
-            cv2.imshow("Imagen sin peso", enh_img)
-            cv2.waitKey(0)
+def get_centroid(contour):
+    # Asegurarse de que el contorno es un arreglo de NumPy
+    if not isinstance(contour, np.ndarray):
+        contour = np.array(contour)
     
-        #Pasar la imagen a escala de grises
-        img1 = cv2.cvtColor(enh_img, cv2.COLOR_BGR2GRAY)
+    # Calcular los momentos del contorno
+    M = cv2.moments(contour)
+    
+    # Calcular el centroide si el área del contorno es diferente de cero
+    if M["m00"] != 0:
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+    else:
+        cX, cY = 0, 0  # O manejar de otra manera si el contorno es muy pequeño o tiene área cero
+    
+    return (cX, cY)
 
-        if (draw):
-            cv2.imshow("Imagen en escala de grises", img1)
-            cv2.waitKey(500)
+def convertir_a_json(objeto):
+    if isinstance(objeto, np.integer):
+        return int(objeto)
+    elif isinstance(objeto, np.floating):
+        return float(objeto)
+    elif isinstance(objeto, np.ndarray):
+        return objeto.tolist()
+    elif isinstance(objeto, (list, dict, str, int, float, bool, type(None))):
+        return objeto
+    else:
+        raise TypeError(f"Tipo {type(objeto)} no es serializable")
+    
 
-        #Calculo el tamaño de la imagen (ancho*alto)
-        #im_size = img.shape[0]*img.shape[1]
-        #Calculo el tamaño de bloque correspondiente al que calcula Matlab por defecto
-        #blockSize = 2*(math.floor(im_size/16))+1
-        #cv.adaptiveThreshold(	src, maxValue, adaptiveMethod, thresholdType, blockSize, C) ->	dst
-        #C: Constant subtracted from the mean or weighted mean. Normally, it is positive but may be zero or negative as well.
-        #No sé exactamente qué es C, el resto de los valores los tengo controlados
-        #No me deja usar el blockSize calculado (creo que en Matlab se coge por defecto en valor de blockSize que yo he calculado)
-        #Dejo el valor 199 porque es el que he visto en internet
-        bw = cv2.adaptiveThreshold(img1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 1.05)
+# Paths and constants
+files_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\Corrected'
+output_file_path = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\head_tail_pts.json'
+head_tail_pts = {}
 
-        kernel = np.ones((5,5), np.uint8)
+# Load contours from JSON file
+with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\masks\masks_contours.json', 'r') as archivo:
+    masks_contours = json.load(archivo)
 
-        ## OBTENER LOS BORDES Y OBJETOS DE LA IMAGEN CON SUS CARACTERÍSTICAS
-        #Detecto los bordes
+#Leer sufijo
+with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\sufijo.txt', 'r') as f:
+    sufijo = f.read().strip()
 
-        if (draw):
-            cv2.imshow("Imagen binarizada", bw)
-            cv2.waitKey(0)
-
-        contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-        #Los pinto en la imagen
-        img_final = img.copy()
-        cv2.drawContours(img_final, contours, -1, (255,0,0))
-
-        if (draw):
-            cv2.imshow("Imagen con contornos", img_final)
-            cv2.waitKey(500)
+# Process each image and find head-tail points
+for path_img in os.listdir(files_dir):
+    if(path_img == f"cam_sup_l_corrected_{sufijo}.jpg" or path_img == f"cam_sup_r_corrected_{sufijo}.jpg"):
+        dict_aux = {}
+        idx = 0
+        path_img_aux = "/"+path_img
+        for mask_contour in masks_contours:
+            contorno_l = mask_contour['l']['cnt']
+            contorno_r = mask_contour['r']['cnt']
+            bbox_l = mask_contour['l']['bbox']
+            bbox_r = mask_contour['r']['bbox']
+            despx_l = bbox_l[0]
+            despy_l = bbox_l[1]
+            despx_r = bbox_r[0]
+            despy_r = bbox_r[1]
+            diff_x = despx_r - despx_l
+            diff_y = despy_r - despy_l
+            recoter_l = recortar_imagen(cv2.imread(files_dir+f"/cam_sup_l_corrected_{sufijo}.jpg"), bbox_l)
+            recoter_r = recortar_imagen(cv2.imread(files_dir+f"/cam_sup_r_corrected_{sufijo}.jpg"), bbox_r)
+            max_pts_l = maxDist(contorno_l)
+            max_pts_r = maxDist(contorno_r)
+            max_dist_l = math.sqrt((max_pts_l[0][0] - max_pts_l[1][0])**2 + (max_pts_l[0][1] - max_pts_l[1][1])**2)
+            max_dist_r = math.sqrt((max_pts_r[0][0] - max_pts_r[1][0])**2 + (max_pts_r[0][1] - max_pts_r[1][1])**2)
+            max_dist = max(max_dist_l, max_dist_r)
+            if(max_dist == max_dist_l):
+                ext_pts_l = max_pts_l
+                #los puntos extremos en r se calculan en base a la diferencia entre la bbox de r y la bbox de l
+                ext_pts_r_aux = [[max_pts_l[0][0] + diff_x, max_pts_l[0][1] + diff_y], [max_pts_l[1][0] + diff_x, max_pts_l[1][1] + diff_y]]
+                #Se buscan los puntos del contorno r más cercanos a los puntos trasladados de l
+                ext_pt_r_1, ext_pt_r_2, distance_r_1, ditance_r_2 = find_closest_points(contorno_r, ext_pts_r_aux[0], ext_pts_r_aux[1])
+                if distance_r_1 > 7 or ditance_r_2 > 7:
+                    continue
+                ext_pts_r = [ext_pt_r_1, ext_pt_r_2]
+                #buscar el par de puntos extremos en r que esten más cerca de ext_pts_r_aux
                 
-        #EXTRAER Y GUARDAR LAS CARACTERÍSTICAS MNORFOLÓGICAS DE LOS OBJETOS DETECTADOS
-        #Vecindad de 8
-        #Obtengo array etiquetado y número de objetos en la imagen
-        if (guardar_carac_morfologicas):
 
-            #Obtengo las características morfológicas de los objetos
-            for cnt in contours:
+            else:
+                ext_pts_r = max_pts_r
+                #los puntos extremos en l se calculan en base a la diferencia entre la bbox de l y la bbox de r
+                ext_pts_l_aux = [[max_pts_r[0][0] - diff_x, max_pts_r[0][1] - diff_y], [max_pts_r[1][0] - diff_x, max_pts_r[1][1] - diff_y]]
+                ext_pt_l_1, ext_pt_l_2, distance_l_1, ditance_l_2 = find_closest_points(contorno_l, ext_pts_l_aux[0], ext_pts_l_aux[1])
+                if distance_l_1 > 5 or ditance_l_2 > 5:
+                    continue
+                ext_pts_l = [ext_pt_l_1, ext_pt_l_2]
+                
+            if 'cam_sup_l' in path_img:
+                cnt = contorno_l
+                centroid = get_centroid(cnt)
+                dict_aux[idx] = [centroid, [list(pt) for pt in ext_pts_l]]
+                idx += 1
+                head_tail_pts[path_img_aux] = dict_aux
+            elif 'cam_sup_r' in path_img:
+                cnt = contorno_r
+                centroid = get_centroid(cnt)
+                dict_aux[idx] = [centroid, [list(pt) for pt in ext_pts_r]]
+                idx += 1
+                head_tail_pts[path_img_aux] = dict_aux
 
-                area = cv2.contourArea(cnt)
+# Save head-tail points to JSON
+with open(output_file_path, "w") as outfile:
+    json.dump(head_tail_pts, outfile, default=convertir_a_json, indent=4)
 
-                if area > 5:
+print("Puntos head-tail guardados en el archivo JSON:", output_file_path)
 
-                    solidity = get_solidity(cnt, area)
-                    extent = get_extent(cnt, area)
-                    eccentricity = get_eccentricity(cnt)
-                    perimeter = cv2.arcLength(cnt,True)
-                    intensity = get_intensity(cnt, bw, img)
 
-                else:
 
-                    solidity = 0
-                    extent = 0
-                    eccentricity = 0
-
-                if area > 1000 and area <13000 and solidity > 0.81 and solidity < 0.95 and extent > 0.5 and extent < 0.8 and eccentricity > 0.2 and eccentricity < 0.82:
-                    
-                    centroid = get_centroid(cnt)
-
-                    #print(solidity)
-
-                    if max(abs(intensity[0]-intensity[1]),abs(intensity[0]-intensity[2])) < 15:
-                        color = 'blanco'
-                    elif np.max(intensity) == intensity[1]:
-                        color = 'verde'
-                    else:
-                        color = 'rojo'
-
-                    n_real = n_real + 1
-                    file_morf.write(f"Object {n_real} area: {area} ")
-                    file_morf.write(f"Object {n_real} perimeter: {perimeter} ")
-                    file_morf.write(f"Object {n_real} centroid: {centroid} ")
-                    file_morf.write(f"Object {n_real} extent: {extent} ")
-                    file_morf.write(f"Object {n_real} eccentricity: {eccentricity} ")
-                    file_morf.write(f"Object {n_real} color: {color} ")
-                    file_morf.write(f"Object {n_real} mean intensity: {intensity[0]} ")
-                    file_morf.write(f"Object {n_real} solidity: {solidity}\n")
-
-                    ext_pts = maxDist(cnt)
-
-                    img_final = cv2.circle(img_final, (math.floor(centroid[0]), math.floor(centroid[1])), radius=20, color=(255, 255, 255), thickness=-1)
-                    img_final = cv2.putText(img_final, f"{str(n_real)} {color}", (math.floor(centroid[0])-10, math.floor(centroid[1])+10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv2.LINE_AA)
-                    
-                    img_final = cv2.circle(img_final, (ext_pts[0]), radius=5, color=(255, 0, 0), thickness=-1)
-                    img_final = cv2.circle(img_final, (ext_pts[1]), radius=5, color=(255, 0, 0), thickness=-1)
-
-                    print("Analizado")
-
-                    #dict_aux[n_real] = [centroid, ext_pts, color]
-
-            cv2.imwrite(f'{files_dir}segmentacion_{path_img.rpartition("_")[0]}.jpg', img_final)
-            head_tail_pts[path_img] = dict_aux
-
-            n_real = 0
-            dict_aux = {}
-
-        if (fich_carac_morf_abierto):
-            file_morf.close
-
-json_object = json.dumps(head_tail_pts, indent=4)
- 
-# Writing to sample.json
-with open(f"{files_dir}head_tail_pts.json", "w") as outfile:
-    outfile.write(json_object)

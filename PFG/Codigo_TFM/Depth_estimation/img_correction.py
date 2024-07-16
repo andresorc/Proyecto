@@ -4,13 +4,13 @@ import os
 import json
 import csv
 
-dir_mx_d = 'Calibration/Cam_sup_d'
-dir_mx_i = 'Calibration/Cam_sup_i'
-dir_stereo = 'Calibration/Stereo'
+dir_mx_d = 'Codigo_TFM/Calibration/Cam_sup_d'
+dir_mx_i = 'Codigo_TFM/Calibration/Cam_sup_i'
+dir_stereo = 'Codigo_TFM/Calibration/Stereo'
 #imgs_dir = 'Depth_estimation/Images'
-imgs_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas'
-imgs_dir_corrected = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\corrected'
-dir_json = 'Calibration/Stereo/params.json'
+imgs_dir = r'..\..\Images\Pruebas'
+imgs_dir_corrected = r'..\..\Images\Pruebas\corrected'
+dir_json = 'Codigo_TFM/Calibration/Stereo/params.json'
 
 mtx_cam_r = np.loadtxt(os.path.join(dir_mx_d, 'mtx_cam_sup_d.csv'), delimiter=',')
 dist_cam_r = np.loadtxt(os.path.join(dir_mx_d, 'dist_cam_sup_d.csv'), delimiter=',')

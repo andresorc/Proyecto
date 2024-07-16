@@ -1,1 +1,0 @@
-Object 1 area: 4185Object 1 extent: 0.6488372093023256Object 1 eccentricity: 0.5933144749779227Object 1 major axis length: 82.45542760826798Object 1 minor axis length: 66.37420870563227Object 1 perimeter: 389.2264427649427Object 1 solidity: 0.8625309150865622
