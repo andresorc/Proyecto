@@ -1,1 +1,0 @@
-Object 1 area: 6220.5 Object 1 perimeter: 349.4629839658737 Object 1 centroid: [1369, 742] Object 1 extent: 0.6539634146341463 Object 1 eccentricity: 0.6748124132964852 Object 1 color: blanco Object 1 mean intensity: 231.27432517263028 Object 1 solidity: 0.9147794117647059
