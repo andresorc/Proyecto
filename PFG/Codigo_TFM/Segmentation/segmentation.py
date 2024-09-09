@@ -16,8 +16,6 @@ def dist(p1, p2):
     y0 = p1[1] - p2[1]
     return x0 * x0 + y0 * y0
 
-import numpy as np
-
 def find_closest_points(contour, point1, point2):
     def euclidean_distance(p1, p2):
         return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
@@ -148,16 +146,16 @@ def convertir_a_json(objeto):
     
 
 # Paths and constants
-files_dir = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\Corrected'
-output_file_path = r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\head_tail_pts.json'
+files_dir = r'Images\Pruebas\Corrected'
+output_file_path = r'Images\Pruebas\head_tail_pts.json'
 head_tail_pts = {}
 
 # Load contours from JSON file
-with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\masks\masks_contours.json', 'r') as archivo:
+with open(r'masks\masks_contours.json', 'r') as archivo:
     masks_contours = json.load(archivo)
 
 #Leer sufijo
-with open(r'C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\sufijo.txt', 'r') as f:
+with open(r'Images\Pruebas\sufijo.txt', 'r') as f:
     sufijo = f.read().strip()
 
 # Process each image and find head-tail points

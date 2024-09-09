@@ -52,11 +52,11 @@ def discard_shorter_line(lines):
             non_crossing_lines.append(line1)
     return non_crossing_lines
 
-json_pts_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\head_tail_pts.json"
+json_pts_dir = r"Images\Pruebas\head_tail_pts.json"
 json_params_dir = 'Codigo_TFM/Calibration/Stereo/params.json'
 depth_csv_dir = 'Codigo_TFM/Depth_estimation/depth.csv'
-imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Pruebas\Corrected"
-save_imgs_dir = r"C:\Users\andre\OneDrive\Escritorio\UNI\TFG\Codigo\Proyecto\PFG\Images\Results"
+imgs_dir = r"Images\Pruebas\Corrected"
+save_imgs_dir = r"Images\Results"
 
 lengths = []
 draw_length = 1

@@ -8,8 +8,8 @@ dir_mx_d = 'Codigo_TFM/Calibration/Cam_sup_d'
 dir_mx_i = 'Codigo_TFM/Calibration/Cam_sup_i'
 dir_stereo = 'Codigo_TFM/Calibration/Stereo'
 #imgs_dir = 'Depth_estimation/Images'
-imgs_dir = r'..\..\Images\Pruebas'
-imgs_dir_corrected = r'..\..\Images\Pruebas\corrected'
+imgs_dir = r'Images\Pruebas'
+imgs_dir_corrected = r'Images\Pruebas\Corrected'
 dir_json = 'Codigo_TFM/Calibration/Stereo/params.json'
 
 mtx_cam_r = np.loadtxt(os.path.join(dir_mx_d, 'mtx_cam_sup_d.csv'), delimiter=',')
